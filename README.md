@@ -1,0 +1,4 @@
+haskell
+=======
+
+haskell learning scripts
