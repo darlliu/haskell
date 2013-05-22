@@ -58,8 +58,8 @@ mycomp = (odd `mymap`) . mymerge
 mycomp2 = mymerge . (odd `mymap`)  
 mycomp3 = length.mycomp2
 --note : composite operator is right evaluated.
-myfoldadd xs=foldl (\s t->s `seq` t `seq` s*t) 1 xs
-myfoldadd2 xs=foldl (\s t-> s*t) 1 xs
+myfoldadd xs = foldl (\s t->s `seq` t `seq` s*t) 1 xs
+myfoldadd2 xs = foldl (\s t-> s*t) 1 xs
 
 class MyClass a where
     eql::a->a->Bool
