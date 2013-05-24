@@ -122,8 +122,8 @@ entriesByUpDown :: [Cybert_entry] -> Bool -> [Cybert_entry]
 entriesByUpDown xs val = filter (\x -> pred $ mean x) xs where
                           pred (Left a) = False
                           pred (Right b) = if length b < 2 then False
-                                            else let bigger = (b!!1-b!!0>0)
-                                            in bigger==val
+                                           else let bigger = (b!!1-b!!0>0)
+                                                in bigger==val
 --filtering
 
 cybertToSet :: [Cybert_entry] -> S.Set Cybert_entry
@@ -132,7 +132,14 @@ cybertToSet xs = S.fromList xs
 {-end set operation and filtering routines-}
 {-IO routines-}
 buildHeader :: B.ByteString -> Maybe (M.Map String Int)
-buildHeader s = Just $ M.fromList [("",-1)]
+buildHeader s = let ss = B.split '\t' s
+                in M.fromList (foldl pred [] ss) where
+                   pred acc x = let xx = B.unpack x
+                                in case  xx of "meanC" -> acc : ("meanc", idx)
+                                               "meanE" -> acc : ("meane", idx)
+                                               "meanc" -> acc : ("meanc", idx)
+                                               "meane" -> acc : ("meanc", idx)
+
 
 lineToCybert :: (Maybe (M.Map String Int))-> [Cybert_entry] -> B.ByteString -> [Cybert_entry]
 --take a header and an accumulator, then read the line and append the cybert entry
