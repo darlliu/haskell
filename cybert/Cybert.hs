@@ -170,14 +170,14 @@ exportCybert xs fname = do
 exportGeneSyms :: [Cybert_entry] -> String -> IO()
 exportGeneSyms xs fname = do
     withFile fname WriteMode (\handle -> do
-            let contents = show (map genesym xs)
+            let contents = foldl1 (\acc x -> acc++"\n"++x) (map showJustS (map genesym xs))
             hPutStr handle contents
             )
 
 exportProbes :: [Cybert_entry] -> String -> IO()
 exportProbes xs fname = do
     withFile fname WriteMode (\handle -> do
-            let contents = show (map genesym xs)
+            let contents = foldl1 (\acc x -> acc++"\n"++x) (map probe xs)
             hPutStr handle contents
             )
 
