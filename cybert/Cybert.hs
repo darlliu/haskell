@@ -168,11 +168,11 @@ getNums :: (M.Map String (Maybe Int))-> [B.ByteString] -> [String] -> Either Flo
 getNums header ss ids = let nums = map (getNum header ss) ids
                          in if length nums == 1 then Left (nums !! 0)
                               else Right $ filter (not . (== -1)) nums
-lineToCybert :: (M.Map String (Maybe Int))-> [Cybert_entry] -> B.ByteString -> [Cybert_entry]
+lineToCybert :: (M.Map String (Maybe Int))->  B.ByteString -> Cybert_entry
 --take a header and an accumulator, then read the line and append the cybert entry
-lineToCybert header xs line = xs ++ readLine line where
+lineToCybert header line = readLine line where
     readLine s = let ss = B.split '\t' s 
-                  in if length ss /= M.size header then []
+                  in if length ss /= M.size header then cybert_entry
                      else let cybt= cybert_entry {
                          probe = B.unpack $ ss `maybeGet` (header M.! "probe_id"),
                          --this is a must
@@ -185,9 +185,9 @@ lineToCybert header xs line = xs ++ readLine line where
                          mean = getNums header ss $ map ( "mean" ++ ) ["c","e","1","2","3","4","5","6","7"],
                          sds = getNums header ss $ map ( "std" ++ ) ["c","e","1","2","3","4","5","6","7"]
                          --these are one or many
-                         , raw = s
+                         {-, raw = s-}
                          --raw info
-                         } in [cybt]
+                         } in cybt
 
 loadCybert :: String -> IO (Maybe [Cybert_entry])
 loadCybert fname = catch
@@ -196,11 +196,9 @@ loadCybert fname = catch
         let mylines =  B.split '\n' contents
         if length mylines <= 1 then return Nothing
         else let header = buildHeader (head mylines);
-                 output = (Just (foldl (lineToCybert header) [] (drop 1 mylines)))
+                 output = (Just (map (lineToCybert header) (drop 1 mylines)))
              in if output == (Just []) then return Nothing
-                  else do 
-                    putStrLn "Done parsing"
-                    return output
+                  else return output
     ))
     (\err -> do
             if isEOFError err
@@ -222,14 +220,14 @@ exportCybert xs fname = do
 exportGeneSyms :: [Cybert_entry] -> String -> IO()
 exportGeneSyms xs fname = do
     withFile fname WriteMode (\handle -> do
-            let contents = foldl1 (\acc x -> acc++"\n"++x) (map showJustS (map genesym xs))
+            let contents = unlines (map showJustS (map genesym xs))
             hPutStr handle contents
             )
 
 exportProbes :: [Cybert_entry] -> String -> IO()
 exportProbes xs fname = do
     withFile fname WriteMode (\handle -> do
-            let contents = foldl1 (\acc x -> acc++"\n"++x) (map probe xs)
+            let contents = unlines (map probe xs)
             hPutStr handle contents
             )
 
