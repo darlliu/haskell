@@ -186,7 +186,7 @@ lineToCybert header fname line = readLine line where
                          mean = getNums header ss $ map ( "mean" ++ ) ["c","e","1","2","3","4","5","6","7"],
                          sds = getNums header ss $ map ( "std" ++ ) ["c","e","1","2","3","4","5","6","7"]
                          --these are one or many
-                         {-, raw = s-}
+                         , raw = s
                          --raw info
                          } in cybt
 
@@ -197,8 +197,8 @@ loadCybert fname = catch
         let mylines =  B.split '\n' contents
         if length mylines <= 1 then return Nothing
         else let header = buildHeader (head mylines);
-                 output = (Just (filter (not.isNothing.collection)
-                                 $ map (lineToCybert header fname) (drop 1 mylines)))
+                 output = Just (filter (not.isNothing.collection)
+                                $ map (lineToCybert header fname) (drop 1 mylines))
              in if output == (Just []) then return Nothing
                   else return output
     ))
