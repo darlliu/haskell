@@ -168,9 +168,9 @@ getNums :: (M.Map String (Maybe Int))-> [B.ByteString] -> [String] -> Either Flo
 getNums header ss ids = let nums = map (getNum header ss) ids
                          in if length nums == 1 then Left (nums !! 0)
                               else Right $ filter (not . (== -1)) nums
-lineToCybert :: (M.Map String (Maybe Int))->  B.ByteString -> Cybert_entry
+lineToCybert :: (M.Map String (Maybe Int))-> String  ->B.ByteString -> Cybert_entry
 --take a header and an accumulator, then read the line and append the cybert entry
-lineToCybert header line = readLine line where
+lineToCybert header fname line = readLine line where
     readLine s = let ss = B.split '\t' s 
                   in if length ss /= M.size header then cybert_entry
                      else let cybt= cybert_entry {
@@ -181,6 +181,7 @@ lineToCybert header line = readLine line where
                          pval = getNum header ss "pval",
                          bf = getNum header ss "bonferroni",
                          bh = getNum header ss "bh",
+                         collection = Just fname,
                          --these are -1 defaulted
                          mean = getNums header ss $ map ( "mean" ++ ) ["c","e","1","2","3","4","5","6","7"],
                          sds = getNums header ss $ map ( "std" ++ ) ["c","e","1","2","3","4","5","6","7"]
@@ -196,7 +197,8 @@ loadCybert fname = catch
         let mylines =  B.split '\n' contents
         if length mylines <= 1 then return Nothing
         else let header = buildHeader (head mylines);
-                 output = (Just (map (lineToCybert header) (drop 1 mylines)))
+                 output = (Just (filter (not.isNothing.collection)
+                                 $ map (lineToCybert header fname) (drop 1 mylines)))
              in if output == (Just []) then return Nothing
                   else return output
     ))
@@ -230,6 +232,5 @@ exportProbes xs fname = do
             let contents = unlines (map probe xs)
             hPutStr handle contents
             )
-
 {-exportRef :: [Cybert_entry] -> String -> String -> IO()-}
 {-end IO routines-}
