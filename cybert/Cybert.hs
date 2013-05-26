@@ -108,26 +108,26 @@ instance Show Cybert_entry where
         -- for each sample
 {-end format and show routines-}
 {-set operation and filtering routines-}
-entriesBySym :: [Cybert_entry] -> String -> [Cybert_entry]
-entriesBySym xs sym = filter (\x -> genesym x == (Just sym)) xs
+entriesBySym :: String -> [Cybert_entry] -> [Cybert_entry]
+entriesBySym sym xs = filter (\x -> genesym x == (Just sym)) xs
 
-entryByProbe :: [Cybert_entry] -> String -> Cybert_entry
-entryByProbe xs p = head $ filter (\x -> probe x == p) xs
+entryByProbe :: String -> [Cybert_entry] -> Cybert_entry
+entryByProbe p xs = head $ filter (\x -> probe x == p) xs
 
-entriesBySecondaryRef :: [Cybert_entry] -> String -> String -> [Cybert_entry]
-entriesBySecondaryRef xs tref ref = filter (\x -> (secondaryRefs x) M.! tref == ref) xs
+entriesBySecondaryRef :: String -> String -> [Cybert_entry] -> [Cybert_entry]
+entriesBySecondaryRef tref ref xs = filter (\x -> (secondaryRefs x) M.! tref == ref) xs
 --lookup
-entriesByFold :: [Cybert_entry] -> Float -> [Cybert_entry]
-entriesByFold xs threshold = filter (\x ->pred $ mean x) xs where
+entriesByFold :: Float -> [Cybert_entry] -> [Cybert_entry]
+entriesByFold threshold xs = filter (\x ->pred $ mean x) xs where
                             pred (Left a) = False
                             pred (Right b)= if length b < 2 then False
                                             else b!!1-b!!0 > threshold
 
-entriesByPval :: [Cybert_entry] -> Float -> [Cybert_entry]
-entriesByPval xs threshold = filter (\x -> pval x < threshold) xs
+entriesByPval :: Float -> [Cybert_entry] -> [Cybert_entry]
+entriesByPval threshold xs = filter (\x -> pval x < threshold) xs
 
-entriesByUpDown :: [Cybert_entry] -> Bool -> [Cybert_entry]
-entriesByUpDown xs val = filter (\x -> pred $ mean x) xs where
+entriesByUpDown :: Bool -> [Cybert_entry] -> [Cybert_entry]
+entriesByUpDown val xs = filter (\x -> pred $ mean x) xs where
                           pred (Left a) = False
                           pred (Right b) = if length b < 2 then False
                                            else let bigger = (b!!1-b!!0>0)
