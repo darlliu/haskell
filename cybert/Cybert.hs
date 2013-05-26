@@ -76,8 +76,8 @@ hasher :: String -> Int
 hasher = foldl (\h c -> 33*h `xor` fromEnum c) 5381
 cybertHash :: Cybert_entry -> Int
 cybertHash NA = 0
-cybertHash Cybert{probe=p, collection=(Nothing)} = hasher $ "NONE"++p
-cybertHash Cybert{probe=p, collection=(Just s)} = hasher $ s++p
+cybertHash Cybert{probe=p} = hasher p
+{-cybertHash Cybert{probe=p, collection=(Just s)} = hasher $ s++p-}
 
 instance Eq Cybert_entry where
     a == b = (cybertHash a) == (cybertHash b)

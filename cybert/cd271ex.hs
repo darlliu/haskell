@@ -3,9 +3,13 @@
 import Cybert
 import Control.Monad
 import Data.Maybe
+import Data.Set (fromList, toList, union, empty)
 extract:: Maybe [a] -> [a]
 extract Nothing = []
 extract (Just x) = x
+extractS:: Maybe String -> String
+extractS Nothing = ""
+extractS (Just x) = x
 main = do
     all_combined <- loadCybert "./CyberT_Output/unpaired/CD271_all_together0.txt"
     let all_up = (entriesByPval 0.05) $ (entriesByUpDown True)  (extract all_combined)
@@ -20,6 +24,7 @@ main = do
         down = map  (entriesByPval 0.05)  (map (entriesByUpDown False) pairs)
         five_up = map (filter (\x -> (foldr (\z acc -> acc + (length z)) 0 (map (filter (\y -> probe y == probe x)) up ) >= 5 ))) up
         five_down =map (filter (\x -> (foldr (\z acc -> acc + (length z)) 0 (map (filter (\y -> probe y == probe x)) down) >= 5 ))) down
-    ; mapM (`exportGeneSyms` "five_up_refs.txt") five_up
-    ; mapM (`exportGeneSyms` "five_down_refs.txt") five_down
-
+        five_ups = foldl union empty (map cybertToSet five_up)
+        five_downs = foldl union empty (map cybertToSet five_down)
+    ;  exportGeneSyms (toList five_ups) "five_up_refs.txt" 
+    ;  exportGeneSyms (toList five_downs) "five_down_refs.txt" 
