@@ -1,4 +1,4 @@
--- reproduce the analysis for CD271 pvals, functional stype
+-- reproduce the analysis for CD271 pvals, functional style
 --
 import Cybert
 import Control.Monad
@@ -7,9 +7,6 @@ import Data.Set (fromList, toList, union, empty)
 extract:: Maybe [a] -> [a]
 extract Nothing = []
 extract (Just x) = x
-extractS:: Maybe String -> String
-extractS Nothing = ""
-extractS (Just x) = x
 pfind x = map (filter (\y -> probe y == probe x))
     -- find entries with same probeid
 countln = foldr (\z acc -> acc + (length z)) 0
