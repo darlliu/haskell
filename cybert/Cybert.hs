@@ -122,11 +122,13 @@ entriesBySecondaryRef :: String -> String -> [Cybert_entry] -> [Cybert_entry]
 entriesBySecondaryRef tref ref xs = filter (\x -> (secondaryRefs x) M.! tref == ref) xs
 --lookup
 entriesByFold :: Float -> [Cybert_entry] -> [Cybert_entry]
+--shows fold CHANGE, i.e. the change in fold from the larger to the smaller
 entriesByFold threshold xs = filter (\x ->pred $ mean x) xs where
                             pred (Left a) = False
                             pred (Right b)= if length b < 2 then False
-                                            else b!!1-b!!0 > threshold
-
+                                            else let larger = foldl1 max b
+                                                     smaller = foldl1 min b
+                                                 in larger - smaller > threshold
 entriesByPval :: Float -> [Cybert_entry] -> [Cybert_entry]
 entriesByPval threshold xs = filter (\x -> pval x < threshold) xs
 
