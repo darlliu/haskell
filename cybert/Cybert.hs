@@ -16,6 +16,7 @@ module Cybert
         sample, collection, mean, bf, bh, sds, 
         pval,ratio,secondaryRefs,secondaryData),
     cybert_entry,
+    cybert_header,
     showCybertEntries,
     entriesByFold,
     entriesByPval,
@@ -35,6 +36,7 @@ import Data.Maybe
 import Data.Char
 import System.IO
 import System.IO.Error
+import Control.Exception as E
 import qualified Data.Set as S
 import qualified Data.Map as M
 import qualified Data.ByteString.Char8 as B
@@ -71,7 +73,9 @@ cybert_entry = Cybert{
     secondaryData = M.fromList [("",0)],
     raw = B.empty
 }
-
+cybert_header = (M.fromList [("probe", "probe_id"), ("genesym","gene_sym"),
+    ("pval","pval"),("bf","bonferroni"),("bh","bh"),("ratio","ratiomean"),("mean","mean"),
+    ("sds","std")])
 hasher :: String -> Int
 hasher = foldl (\h c -> 33*h `xor` fromEnum c) 5381
 cybertHash :: Cybert_entry -> Int
@@ -168,37 +172,50 @@ getNums :: (M.Map String (Maybe Int))-> [B.ByteString] -> [String] -> Either Flo
 getNums header ss ids = let nums = map (getNum header ss) ids
                          in if length nums == 1 then Left (nums !! 0)
                               else Right $ filter (not . (== -1)) nums
-lineToCybert :: (M.Map String (Maybe Int))-> String  ->B.ByteString -> Cybert_entry
---take a header and an accumulator, then read the line and append the cybert entry
-lineToCybert header fname line = readLine line where
+getSecondaryData::(M.Map String String) ->(M.Map String (Maybe Int))-> [B.ByteString]  -> (M.Map String Float)
+getSecondaryData cheader header ss =
+    let pfxs = filter (\x->"Secondary_Data_" `isInfixOf` x) (M.keys cheader)
+        keys = map (cheader M.!) pfxs
+        vals = map (getNum header ss) keys
+    in M.fromList (zip keys vals)
+getSecondaryRefs::(M.Map String String) ->(M.Map String (Maybe Int))-> [B.ByteString]  -> (M.Map String String)
+getSecondaryRefs cheader header ss =
+    let pfxs = filter (\x->"Secondary_Refs_" `isInfixOf` x) (M.keys cheader)
+        keys = map (cheader M.!) pfxs
+        vals = map (getText header ss) keys
+    in M.fromList (zip keys (map (fromMaybe "") vals))
+lineToCybert :: (M.Map String String) -> (M.Map String (Maybe Int))-> String  ->B.ByteString -> Cybert_entry
+lineToCybert cheader header fname line = readLine line where
     readLine s = let ss = B.split '\t' s 
                   in if length ss /= M.size header then cybert_entry
                      else let cybt= cybert_entry {
-                         probe = B.unpack $ ss `maybeGet` (header M.! "probe_id"),
+                         probe = B.unpack $ ss `maybeGet` (header M.! (cheader M.! "probe")),
                          --this is a must
-                         genesym = getText header ss "gene_sym",
-                         --this is of maybe type
-                         pval = getNum header ss "pval",
-                         bf = getNum header ss "bonferroni",
-                         bh = getNum header ss "bh",
                          collection = Just fname,
+                         genesym = getText header ss $ cheader M.! "genesym",
+                         --this is of maybe type
+                         pval = getNum header ss $ cheader M.! "pval",
+                         bf = getNum header ss $ cheader M.! "bf",
+                         bh = getNum header ss $ cheader M.! "bh",
                          --these are -1 defaulted
-                         mean = getNums header ss $ map ( "mean" ++ ) ["c","e","1","2","3","4","5","6","7"],
-                         sds = getNums header ss $ map ( "std" ++ ) ["c","e","1","2","3","4","5","6","7"]
+                         mean = getNums header ss $ map ( cheader M.! "mean" ++ ) ["c","e","1","2","3","4","5","6","7"],
+                         sds = getNums header ss $ map ( cheader M.! "sds" ++ ) ["c","e","1","2","3","4","5","6","7"],
                          --these are one or many
-                         , raw = s
+                         raw = s,
                          --raw info
+                         secondaryRefs = getSecondaryRefs cheader header ss,
+                         secondaryData = getSecondaryData cheader header ss
                          } in cybt
 
-loadCybert :: String -> IO (Maybe [Cybert_entry])
-loadCybert fname = catch
+loadCybert :: (M.Map String String)->String -> IO (Maybe [Cybert_entry])
+loadCybert cheader fname = E.catch
     (withFile fname ReadMode (\handle -> do
         contents <- B.hGetContents handle
         let mylines =  B.split '\n' contents
         if length mylines <= 1 then return Nothing
         else let header = buildHeader (head mylines);
                  output = Just (filter (not.isNothing.collection)
-                                $ map (lineToCybert header fname) (drop 1 mylines))
+                                $ map (lineToCybert cheader header fname) (drop 1 mylines))
              in if output == (Just []) then return Nothing
                   else return output
     ))
