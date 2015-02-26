@@ -2,8 +2,11 @@ dist
 cabal-dev
 *.o
 *.hi
+*.out.*
 *.chi
 *.chs.h
 *.txt
 test_*
 .virthualenv
+*
+!*.*
