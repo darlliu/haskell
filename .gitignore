@@ -8,5 +8,5 @@ cabal-dev
 *.txt
 test_*
 .virthualenv
-*
+*/*
 !*.*

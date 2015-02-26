@@ -23,6 +23,7 @@ module Cybert
     entriesBySym,
     entriesByUpDown,
     entriesBySecondaryRef,
+    showEitherF,
     cybertToSet,
     loadCybert,
     exportCybert,
